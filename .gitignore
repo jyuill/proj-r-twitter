@@ -1,0 +1,5 @@
+.Rproj.user
+.Rhistory
+.RData
+.httr-oauth
+twitter_keys.R
