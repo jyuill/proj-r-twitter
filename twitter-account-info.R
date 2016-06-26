@@ -2,6 +2,7 @@
 library(twitteR)
 library(dplyr)
 library(ggplot2)
+library(scales)
 library(lubridate)
 
 ### get auth keys from twitter_keys.R file (not available on git)
@@ -40,9 +41,22 @@ for (i in 1:ntusers){
   tusers.EA <- rbind(tusers.EA,tuser)
 }
 
+### CALCULATE CHANGE FROM ONE DATE TO NEXT
+## 1. remove extraneous cols and group by screenName and date
+tusers.follow <- tusers.EA %>%
+  select(followersCount,name,date) %>%
+  arrange(name,date)
+## 2. calculate 
+tusers.follow <- tusers.follow %>%
+  group_by(name) %>%
+  mutate(chg=followersCount-lag(followersCount)) %>%
+  mutate(chgpc=chg/lag(followersCount))
+
+
 ### SAVE IN CSV
 ## basic csv
 write.csv(tusers.EA,"TW-users-EA.csv",row.names = FALSE)
+write.csv(tusers.follow,"TW-users-follow.csv",row.names=FALSE)
 # backup - add current date to file name for reference
 # get current date in string format
 dt <- as.character(today())
@@ -53,15 +67,41 @@ fname <- gsub("_.csv",".csv",fname)
 write.csv(tusers.EA,fname,row.names=FALSE)
 # Now you can read data into another file for analysis!
 
-ggplot(tusers.EA,aes(x=screenName,y=followersCount))+geom_bar(stat="identity")+theme_classic()
-ggplot(tusers.EA,aes(x=screenName,y=followersCount))+geom_bar(stat="identity")+
+
+### basic bar chart showing totals across all dates - only relevant for single date
+tusers.latest <- tusers.EA %>%
+  filter(date==max(date))
+ggplot(tusers.latest,aes(x=name,y=followersCount))+geom_bar(stat="identity")+theme_classic()
+## flip coordinates to be more readable
+ggplot(tusers.latest,aes(x=name,y=followersCount))+geom_bar(stat="identity")+
   theme_bw()+
-  coord_flip()
-ggplot(tusers.EA,aes(x=screenName,y=followersCount,fill=as.factor(date)))+geom_bar(stat="identity",
+  coord_flip()+
+  scale_y_continuous(labels=comma)
+
+### bar chart showing follower numbers side-by-side by date, for each account
+ggplot(tusers.EA,aes(x=name,y=followersCount,fill=as.factor(date)))+geom_bar(stat="identity",
                                                                         position=position_dodge())+
   theme_bw()+
-  coord_flip()
-ggplot(tusers.EA,aes(x=date,y=followersCount,col=screenName))+geom_line()+
-  theme_bw()
+  coord_flip()+
+  scale_y_continuous(labels=comma)
+
+### line chart comparing followers by date for each account
+ggplot(tusers.EA,aes(x=date,y=followersCount,col=name))+geom_line()+
+  theme_minimal()+
+  scale_y_continuous(labels=comma)+
+  scale_x_date(date_labels="%b-%e") # coudl add %y for 2-digit yr or %Y for 4-digit yr
+
+### chart showing daily change in followers
+ggplot(tusers.follow,aes(x=name,y=chg,fill=as.factor(date)))+geom_bar(stat="identity",
+                                                                             position=position_dodge())+
+  theme_bw()+
+  coord_flip()+
+  scale_y_continuous(labels=comma)
+
+ggplot(tusers.follow,aes(x=name,y=chgpc,fill=as.factor(date)))+geom_bar(stat="identity",
+                                                                      position=position_dodge())+
+  theme_bw()+
+  coord_flip()+
+  scale_y_continuous(labels=percent)
 
 
