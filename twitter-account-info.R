@@ -10,11 +10,22 @@ setup_twitter_oauth(my_key, my_secret, my_access_token, my_access_secret)
 
 #### GET CURRENT ACCOUNT INFO - FOLLOWERS ETC
 ### PROCESS WITH LOOP FOR EASY HANDLING OF MULTIPLE ACCOUNTS
-## Set list of accounts
 
+## Set list of accounts
+## ultimately should have these in a spreadsheet and pull in from there
 tusers <- c("EAAccess",
             "HardlineFanPage",
-            "Titanfallgame")
+            "Titanfallgame",
+            "EA",
+            "EASPORTSFIFA",
+            "Battlefield",
+            "EAMaddenNFL",
+            "EAStarWars",
+            "EASPORTSNHL",
+            "Mirrorsedge",
+            "CallofDuty",
+            "officialpes"
+            )
 
 ntusers <- length(tusers) ## count number of accounts to determine how many loop cycles
 
@@ -29,4 +40,22 @@ for (i in 1:ntusers){
   tusers.EA <- rbind(tusers.EA,tuser)
 }
 
-write.csv(tusers.EA,"tw-users-EA.csv")
+### SAVE IN CSV
+## basic csv
+write.csv(tusers.EA,"TW-users-EA.csv",row.names = FALSE)
+# backup - add current date to file name for reference
+# get current date in string format
+dt <- as.character(today())
+fname <- paste(c("TW-users-EA",dt,".csv"),collapse="_")
+# remove _ before .csv to clean up
+fname <- gsub("_.csv",".csv",fname)
+# save file to current working directory with current date
+write.csv(tusers.EA,fname,row.names=FALSE)
+# Now you can read data into another file for analysis!
+
+ggplot(tusers.EA,aes(x=tname,y=followersCount))+geom_bar(stat="identity")+theme_classic()
+ggplot(tusers.EA,aes(x=tname,y=followersCount))+geom_bar(stat="identity")+
+  theme_bw()+
+  coord_flip()
+
+
