@@ -17,15 +17,6 @@ tdate9 <- as.character(today()-8)
 start=tdate9
 end=tdate
 
-#### GENERAL searching for tweets by search term
-## search for tweets
-## use '+' to separate query terms ("fifa 17+snoop dog")
-results <- searchTwitter("titanfall", n=25, lang=NULL, since=start, until=end,
-              locale=NULL, geocode=NULL, sinceID=NULL, maxID=NULL,
-              resultType=NULL, retryOnRateLimit=120)
-## convert results into data frame
-results.df <- twListToDF(results)
-
 #### USER-SPECIFIC tweets using user name
 ### Timeline of user to max n=3200 - enables excluding retweets and replies
 ### use maxID or sinceID to filter based on dates
@@ -78,10 +69,13 @@ tf_yrmth <- tf %>%
   summarize(tweets=sum(tcount))
 ggplot(tf_yrmth,aes(x=yrmth,y=tweets))+geom_bar(stat="identity")
 
-
 ## group by date, type and plot type by date
 tf_type <- tf %>%
   group_by(yrmth,type) %>%
   summarise(tweets=sum(tcount))
 
 ggplot(tf_type,aes(x=yrmth,y=tweets,fill=type))+geom_bar(stat="identity")
+## display breakdown by %
+ggplot(tf_type,aes(x=yrmth,y=tweets,fill=type))+geom_bar(stat="identity",position="fill")
+
+#### NEXT 
