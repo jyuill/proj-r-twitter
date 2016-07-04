@@ -13,7 +13,7 @@ setup_twitter_oauth(my_key, my_secret, my_access_token, my_access_secret)
 
 ## set date range >>> only goes back 8 days from current date
 tdate <- as.character(today())
-tdate9 <- as.character(today()-8)
+tdate9 <- as.character(today()-18)
 start=tdate9
 end=tdate
 
@@ -27,19 +27,23 @@ results <- searchTwitter("titanfall", n=25, lang=NULL, since=start, until=end,
 results.df <- twListToDF(results)
 
 #### USER-SPECIFIC tweets using user name
-#### two methods very similar
+#### two methods return the same fields
+#### difference:
+##### 1. only goes back 8 days, but can select specific date range (useful for adding data over time)
+##### 2. goes back as far to max 3200 tweets, but can't select dates. Can use maxID, sinceID to filter.
 ### 1. search for tweets from specific user - enables date filters
-tweets_user <- searchTwitter('from:titanfallgame',n=50, since=start,until=end,resultType='recent')
+tweets_user <- searchTwitter('from:titanfallgame',n=500, since=start,until=end,resultType='recent')
 tweets_user.df <- twListToDF(tweets_user)
 
 ### 2. timeline of user - enables excluding retweets and replies
-timeline_user <- userTimeline("titanfallgame",n=20,includeRts = TRUE,excludeReplies = FALSE)
-timeline_user.df <- twListToDF(utimeline)
+timeline_user <- userTimeline("titanfallgame",n=3200,includeRts = TRUE,excludeReplies = FALSE)
+timeline_user.df <- twListToDF(timeline_user)
 
 ### comparing 1 & 2 above - same results with the queries as they are
 str(tweets_user.df)
 str(timeline_user.df)
-
+summary(tweets_user.df)
+summary(timeline_user.df)
 
 ## get top n most favorited tweets from user
 results.fav <- favorites('titanfallgame', n = 20, max_id = NULL, since_id = NULL)
@@ -51,34 +55,4 @@ tuser <- getUser('titanfallgame')
 ## twListToDF(tuser) doesn't work but can convert into data frame
 tuser_tf.df <- as.data.frame(tuser)
 tuser_tf.df$date <- today()
-## can get data on multiple users at once but not sure how to convert into usable format
-# musers <- lookupUsers(c('EAAccess', 'hardlinefanpage'))
-## doesn't work:
-# muser.df <- as.data.frame(musers)
-## better of to grab separately, as below...
 
-## same as above for yet another account - in order to combine below
-tuser_eax.df <- as.data.frame(getUser('EAAccess'))
-tuser_eax.df$date <- today()
-
-## bind account info for all 3 above into one data frame
-tusers_EA.df <- data.frame()
-tusers_EA.df <- rbind(tusers_EA.df,tuser_eax.df)
-tusers_EA.df <- rbind(tusers_EA.df,tuser_tf.df)
-
-### OR...AUTOMATE THE PROCESS WITH LOOP FOR EASY HANDLING OF MULTIPLE ACCOUNTS
-## get list of accounts
-tusers <- c("EAAccess",
-            "HardlineFanPage",
-            "Titanfallgame")
-ntusers <- length(tusers) ## count number of accounts to determine how many loop cycles
-
-## run loop to collect current data with date stamp for all accounts and bind into
-## one data frame
-## set up to run automatically to compare change in numbers over time
-tusers.EA <- data.frame()
-for (i in 1:ntusers){
-  tuser <- as.data.frame(getUser(tusers[i]))
-  tuser$date <- today()
-  tusers.EA <- rbind(tusers.EA,tuser)
-}
