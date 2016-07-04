@@ -78,4 +78,7 @@ ggplot(tf_type,aes(x=yrmth,y=tweets,fill=type))+geom_bar(stat="identity")
 ## display breakdown by %
 ggplot(tf_type,aes(x=yrmth,y=tweets,fill=type))+geom_bar(stat="identity",position="fill")
 
-#### NEXT 
+#### NEXT:
+## exclude replies and retweets
+## see which ones most retweeted / favourited
+## possibly classify them by topic?
