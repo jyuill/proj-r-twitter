@@ -102,5 +102,6 @@ tfretweet <- tf %>% filter(type=="retweet")
 ## see which ones most retweeted / favourited
 ggplot(tftweet,aes(x=favoriteCount))+geom_histogram(binwidth=100)
 ggplot(tftweet,aes(x=retweetCount))+geom_histogram(binwidth=50)
+ggplot(tftweet,aes(x=retweetCount,y=favoriteCount))+geom_point()
 
 ## possibly classify them by topic?
