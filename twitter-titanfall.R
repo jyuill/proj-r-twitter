@@ -11,6 +11,8 @@ library(lubridate)
 ### run command and answer question provided before other code
 setup_twitter_oauth(my_key, my_secret, my_access_token, my_access_secret)
 
+
+
 ## set date range >>> only goes back 8 days from current date
 tdate <- as.character(today())
 tdate9 <- as.character(today()-8)
@@ -38,16 +40,23 @@ tf$year <- format(tf$tdate,'%Y')
 tf$yrmth <- format(tf$tdate,'%y-%m')
 
 ## classify tweets by type: tweet, retweet, reply
-tf$type <- "tweet"
+## most accurate classification
+## better than relying on the classification in the dataset (replytoSN or replytoSID)
+## regex tests for '@' or '.@' at beginning of tweet
+## also tests for no '@' (which is -1)
+## tweet number is more accurate than running userTimeLine with includeRts = FALSE and excludeReplies=TRUE
 for (i in 1:nrow(tf)){
   if(tf[i,"isRetweet"]==TRUE) {
     tf[i,"type"] <- "retweet"
-  } else if (!is.na(tf[i,"replyToSN"])){
-             tf[i,"type"] <- "reply"
-  }  else {
-  tf[i,"type"] <- "tweet"
+  } else if (regexpr("@",tf[i,"text"])<0) {
+    tf[i,"type"] <- "tweet"
+  } else if (regexpr("@",tf[i,"text"])<3){
+    tf[i,"type"] <- "reply"
+  } else {
+    tf[i,"type"] <- "tweet"
   }
 }
+
 table(tf$type) ## check breakdown of type
 tf$type <- as.factor(tf$type) ## convert to factor
 ## create counter field, set as 1
@@ -78,7 +87,20 @@ ggplot(tf_type,aes(x=yrmth,y=tweets,fill=type))+geom_bar(stat="identity")
 ## display breakdown by %
 ggplot(tf_type,aes(x=yrmth,y=tweets,fill=type))+geom_bar(stat="identity",position="fill")
 
-#### NEXT:
-## exclude replies and retweets
+#### 
+## exclude replies and retweets - close but may pick up some '.@xxx' replies
+timelinetweet_user<- userTimeline("titanfallgame",n=3200,includeRts = FALSE,excludeReplies = TRUE)
+timelinetweet_user.df <- twListToDF(timelinetweet_user)
+str(timelinetweet_user.df)
+summary(timelinetweet_user.df)
+
+## most accurate is to use original query with 'type' categorization from above
+tftweet <- tf %>% filter(type=="tweet") 
+tftreply <- tf %>% filter(type=="reply")
+tfretweet <- tf %>% filter(type=="retweet")
+
 ## see which ones most retweeted / favourited
+ggplot(tftweet,aes(x=favoriteCount))+geom_histogram(binwidth=100)
+ggplot(tftweet,aes(x=retweetCount))+geom_histogram(binwidth=50)
+
 ## possibly classify them by topic?
