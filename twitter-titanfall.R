@@ -111,6 +111,10 @@ tftweet %>% ggvis(x=~retweetCount,y=~favoriteCount) %>% layer_points()
 
 write.csv(tftweet,"tftweet.csv",row.names = FALSE)
 
+## most retweeted - can't do retweet % because don't know impressions :(
+tftweet %>% 
+
+
 ## identify tweets that have links in them
 tftweet$haslink <- FALSE
 for (i in 1:nrow(tftweet)){
