@@ -5,7 +5,10 @@
 library(twitteR)
 library(dplyr)
 library(ggplot2)
+library(ggvis)
 library(lubridate)
+library(qdapRegex) ## for extracting link urls from text
+library(RCurl) ## to expand shortened urls
 
 ### get auth keys from twitter_keys.R file (not available on git)
 ### run command and answer question provided before other code
@@ -61,8 +64,6 @@ table(tf$type) ## check breakdown of type
 tf$type <- as.factor(tf$type) ## convert to factor
 ## create counter field, set as 1
 tf$tcount <- 1
-## create month and year cols for aggregating by year, mth
-tf$year <- format(tdate,'%Y')
 
 ## group by date and plot number of tweets
 tf_date <- tf %>%
@@ -71,12 +72,14 @@ tf_date <- tf %>%
 
 ggplot(tf_date,aes(x=tdate,y=tweets))+geom_bar(stat="identity")
 ggplot(tf_date,aes(x=tdate,y=tweets))+geom_line()
+tf_date %>% ggvis(~tdate,~tweets) %>% layer_lines()
 
 ## aggregate tweet count by month
 tf_yrmth <- tf %>%
   group_by(yrmth) %>%
   summarize(tweets=sum(tcount))
 ggplot(tf_yrmth,aes(x=yrmth,y=tweets))+geom_bar(stat="identity")
+tf_yrmth %>% ggvis(x=~yrmth,y=~tweets) %>% layer_bars() 
 
 ## group by date, type and plot type by date
 tf_type <- tf %>%
@@ -86,6 +89,7 @@ tf_type <- tf %>%
 ggplot(tf_type,aes(x=yrmth,y=tweets,fill=type))+geom_bar(stat="identity")
 ## display breakdown by %
 ggplot(tf_type,aes(x=yrmth,y=tweets,fill=type))+geom_bar(stat="identity",position="fill")
+tf_type %>% ggvis(x=~yrmth,y=~tweets,fill=~type) %>% layer_bars()
 
 #### 
 ## exclude replies and retweets - close but may pick up some '.@xxx' replies
@@ -103,5 +107,34 @@ tfretweet <- tf %>% filter(type=="retweet")
 ggplot(tftweet,aes(x=favoriteCount))+geom_histogram(binwidth=100)
 ggplot(tftweet,aes(x=retweetCount))+geom_histogram(binwidth=50)
 ggplot(tftweet,aes(x=retweetCount,y=favoriteCount))+geom_point()
+tftweet %>% ggvis(x=~retweetCount,y=~favoriteCount) %>% layer_points()
+
+write.csv(tftweet,"tftweet.csv",row.names = FALSE)
+
+## identify tweets that have links in them
+tftweet$haslink <- FALSE
+for (i in 1:nrow(tftweet)){
+  if (regexpr("http",tftweet[i,"text"])>0) {
+    tftweet[i,"haslink"] <- TRUE
+  } else {
+    tftweet[i,"haslink"] <- FALSE
+  }
+}
+
+## extract links from tweets and put link urls in another field
+tftweet$link <- ""
+for (i in 1:nrow(tftweet)){
+  if (regexpr("http",tftweet[i,"text"])>0) {
+    tftweet[i,"link"] <- as.character(ex_twitter_url(tftweet[i,"text"]))
+  } else {
+    tftweet[i,"link"] <- ""
+  }
+}
+
+## now need to decode short URLs...can't get it to work
+decode_short_url(tftweet[2,"link"])
+decode_short_url("https://t.co/HuygAbTSJW")
+decode_short_url("http://tinyurl.com/adcd")
+decode_short_url("bit.ly/29uaypk")
 
 ## possibly classify them by topic?
