@@ -7,19 +7,25 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 
+options(scipen=999) # to avoid scientific notation on ID numbers
+
 ### get auth keys from twitter_keys.R file (not available on git)
 ### run command and answer question provided before other code
 setup_twitter_oauth(my_key, my_secret, my_access_token, my_access_secret)
 
 ## search for FIFA COVER VOTE tweets
+allpast <- read.csv("results_all.csv",header=TRUE)
+allpast$created <- as.POSIXct(allpast$created)
 
 ## set date range >>> only goes back 8 days from current date
+## date not used after start, in favour of 'sinceID'
+## dates will over-ride 'sinceID' so need to change query
 tdate <- as.character(today())
 tdatestart <- "2016-07-05"
-start=tdatestart
-end=tdate
+start <- tdatestart ## if using sinceID, set since=NULL
+end <- tdate ## if using sinceID, set until=NULL
 
-numresults <- 25000 #not sure what the upper limit is
+numresults <- 20 #not sure what the upper limit is
 
 search <- "#FIFA17HAZARD"
 results <- searchTwitter(search, n=numresults, lang=NULL, since=start, until=end,
@@ -28,6 +34,18 @@ results <- searchTwitter(search, n=numresults, lang=NULL, since=start, until=end
 ## convert results into data frame
 results_hazard.df <- twListToDF(results)
 results_hazard.df$topic <- "Hazard"
+
+################# testing sinceID >>>> weird results compared to date
+## get current max id for player
+sid <- allpast %>% filter(topic=="Hazard") %>% summarize(mid=max(id))
+## set since and until to NULL
+## set sinceID=sid
+resultst <- searchTwitter(search, n=4, lang=NULL, since=NULL, until=NULL,
+                         locale=NULL, geocode=NULL, sinceID=sid, maxID=NULL,
+                         resultType=NULL, retryOnRateLimit=120)
+## convert results into data frame
+results_t5.df <- twListToDF(resultst)
+#############################
 
 search <- "#FIFA17JAMES"
 results <- searchTwitter(search, n=numresults, lang=NULL, since=start, until=end,
@@ -65,4 +83,4 @@ results_cover.df <- twListToDF(results)
 results_cover.df$topic <- "Cover"
 results_all.df <- rbind(results_all.df,results_cover.df)
 
-write.csv(results_all.df,"results_all.csv")
+write.csv(results_all.df,"results_all.csv",row.names = FALSE)
